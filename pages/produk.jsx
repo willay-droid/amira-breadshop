@@ -131,8 +131,10 @@ export default function ProdukPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] dark:bg-zinc-900 transition-colors duration-300 pb-10">
-      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-10 gap-2">
+    // PERBAIKAN: Gunakan h-screen, flex-col, overflow-hidden agar fit layar
+    <div className="h-screen flex flex-col overflow-hidden bg-[#FDFBF7] dark:bg-zinc-900 transition-colors duration-300">
+      {/* Header Statis: shrink-0, shadow-md, z-20 */}
+      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center shrink-0 shadow-md dark:shadow-black/40 z-20 gap-2">
         <h1 className="ml-12 lg:ml-0 text-lg md:text-2xl font-bold text-amber-900 dark:text-amber-400 truncate">
           Toko Roti Amira
           <span className="hidden sm:inline text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -164,182 +166,188 @@ export default function ProdukPage() {
         </div>
       </nav>
 
-      <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 pt-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            Daftar Menu Roti
-          </h2>
-          <button
-            onClick={() => openModal()}
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg shadow-md text-sm"
-          >
-            + Tambah Produk
-          </button>
-        </div>
-
-        <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-700 flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Cari Produk
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                🔍
-              </span>
-              <input
-                type="text"
-                placeholder="Nama produk..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Tampilkan
-            </label>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => {
-                setRowsPerPage(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+      {/* PERBAIKAN: Kontainer scroll mandiri untuk area tabel produk */}
+      <div className="flex-1 overflow-y-auto w-full custom-scrollbar">
+        <main className="p-4 md:p-6 max-w-6xl mx-auto space-y-6 pt-6 pb-20">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              Daftar Menu Roti
+            </h2>
+            <button
+              onClick={() => openModal()}
+              className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg shadow-md text-sm"
             >
-              <option value={10}>10 Baris</option>
-              <option value={100}>100 Baris</option>
-              <option value="all">Semua Data</option>
-            </select>
+              + Tambah Produk
+            </button>
           </div>
-        </div>
 
-        {isLoading ? (
-          <div className="flex justify-center p-10">
-            <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : (
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 overflow-hidden flex flex-col">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[800px] select-none">
-                <thead>
-                  <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-700 text-gray-500 dark:text-gray-400 text-sm">
-                    <th className="p-4 font-medium">Foto</th>
-                    <th
-                      onClick={() => handleSort("name")}
-                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
-                    >
-                      Nama Produk {renderSortIcon("name")}
-                    </th>
-                    <th
-                      onClick={() => handleSort("price")}
-                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
-                    >
-                      Harga Jual {renderSortIcon("price")}
-                    </th>
-                    <th
-                      onClick={() => handleSort("stock")}
-                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
-                    >
-                      Stok {renderSortIcon("stock")}
-                    </th>
-                    <th className="p-4 font-medium text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
-                  {paginatedData.length === 0 ? (
-                    <tr>
-                      <td colSpan="5" className="p-8 text-center text-gray-500">
-                        Data produk tidak ditemukan.
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedData.map((p) => (
-                      <tr
-                        key={p.id}
-                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
-                      >
-                        <td className="p-4">
-                          {p.foto ? (
-                            <img
-                              src={p.foto}
-                              alt={p.name}
-                              className="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm"
-                            />
-                          ) : (
-                            <div className="w-12 h-12 bg-amber-50 dark:bg-zinc-700 rounded-xl flex items-center justify-center text-xl">
-                              🍞
-                            </div>
-                          )}
-                        </td>
-                        <td className="p-4 text-gray-800 dark:text-gray-100 font-medium">
-                          {p.name}
-                        </td>
-                        <td className="p-4 text-amber-600 dark:text-amber-500 font-bold">
-                          Rp {p.price.toLocaleString("id-ID")}
-                        </td>
-                        <td className="p-4">
-                          <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">
-                            {p.stock} pcs
-                          </span>
-                        </td>
-                        <td className="p-4 flex justify-center gap-2">
-                          <button
-                            onClick={() => openModal(p)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDelete(p.id)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="p-4 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center bg-gray-50 dark:bg-zinc-800">
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                Menampilkan{" "}
-                {paginatedData.length > 0 ? (currentPage - 1) * limit + 1 : 0} -{" "}
-                {Math.min(currentPage * limit, sortedData.length)} dari{" "}
-                {sortedData.length} data
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50"
-                >
-                  Prev
-                </button>
-                <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Hal {currentPage} / {totalPages}
+          <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-700 flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Cari Produk
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  🔍
                 </span>
-                <button
-                  onClick={() =>
-                    setCurrentPage((p) => Math.min(totalPages, p + 1))
-                  }
-                  disabled={currentPage === totalPages || totalPages === 0}
-                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50"
-                >
-                  Next
-                </button>
+                <input
+                  type="text"
+                  placeholder="Nama produk..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+                />
               </div>
             </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Tampilkan
+              </label>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => {
+                  setRowsPerPage(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+              >
+                <option value={10}>10 Baris</option>
+                <option value={100}>100 Baris</option>
+                <option value="all">Semua Data</option>
+              </select>
+            </div>
           </div>
-        )}
-      </main>
+
+          {isLoading ? (
+            <div className="flex justify-center p-10">
+              <div className="w-8 h-8 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 overflow-hidden flex flex-col">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[800px] select-none">
+                  <thead>
+                    <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-700 text-gray-500 dark:text-gray-400 text-sm">
+                      <th className="p-4 font-medium">Foto</th>
+                      <th
+                        onClick={() => handleSort("name")}
+                        className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
+                      >
+                        Nama Produk {renderSortIcon("name")}
+                      </th>
+                      <th
+                        onClick={() => handleSort("price")}
+                        className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
+                      >
+                        Harga Jual {renderSortIcon("price")}
+                      </th>
+                      <th
+                        onClick={() => handleSort("stock")}
+                        className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700"
+                      >
+                        Stok {renderSortIcon("stock")}
+                      </th>
+                      <th className="p-4 font-medium text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
+                    {paginatedData.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan="5"
+                          className="p-8 text-center text-gray-500"
+                        >
+                          Data produk tidak ditemukan.
+                        </td>
+                      </tr>
+                    ) : (
+                      paginatedData.map((p) => (
+                        <tr
+                          key={p.id}
+                          className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                        >
+                          <td className="p-4">
+                            {p.foto ? (
+                              <img
+                                src={p.foto}
+                                alt={p.name}
+                                className="w-12 h-12 object-cover rounded-xl border border-gray-200 dark:border-zinc-700 shadow-sm"
+                              />
+                            ) : (
+                              <div className="w-12 h-12 bg-amber-50 dark:bg-zinc-700 rounded-xl flex items-center justify-center text-xl">
+                                🍞
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-4 text-gray-800 dark:text-gray-100 font-medium">
+                            {p.name}
+                          </td>
+                          <td className="p-4 text-amber-600 dark:text-amber-500 font-bold">
+                            Rp {p.price.toLocaleString("id-ID")}
+                          </td>
+                          <td className="p-4">
+                            <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-semibold rounded-full">
+                              {p.stock} pcs
+                            </span>
+                          </td>
+                          <td className="p-4 flex justify-center gap-2">
+                            <button
+                              onClick={() => openModal(p)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => handleDelete(p.id)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md"
+                            >
+                              🗑️
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center bg-gray-50 dark:bg-zinc-800">
+                <span className="text-sm text-gray-500 dark:text-gray-400">
+                  Menampilkan{" "}
+                  {paginatedData.length > 0 ? (currentPage - 1) * limit + 1 : 0}{" "}
+                  - {Math.min(currentPage * limit, sortedData.length)} dari{" "}
+                  {sortedData.length} data
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50"
+                  >
+                    Prev
+                  </button>
+                  <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Hal {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() =>
+                      setCurrentPage((p) => Math.min(totalPages, p + 1))
+                    }
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
 
       {/* Modal Form */}
       {isModalOpen && (

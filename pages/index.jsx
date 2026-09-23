@@ -13,19 +13,19 @@ export default function KasirPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [receiptData, setReceiptData] = useState(null);
 
-  // State untuk Fitur Search & Pre-Order
+  // State untuk Search, Pre-Order, & Popup Pembayaran
   const [searchProduct, setSearchProduct] = useState("");
   const [isPreOrder, setIsPreOrder] = useState(false);
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [pickupDate, setPickupDate] = useState("");
 
-  // Filter produk berdasarkan pencarian kasir
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchProduct.toLowerCase()),
   );
 
-  // 1. Logika Keranjang (Cart)
   const addToCart = (product) => {
     if (!isPreOrder && product.stock <= 0) {
       alert(
@@ -54,7 +54,6 @@ export default function KasirPage() {
     setCart((prev) => prev.filter((item) => item.id !== productId));
   };
 
-  // Fungsi mengubah jumlah qty lewat tombol plus/minus
   const updateQty = (productId, delta) => {
     setCart((prev) =>
       prev.map((item) => {
@@ -68,7 +67,6 @@ export default function KasirPage() {
     );
   };
 
-  // Fungsi langsung ketik jumlah angka di keranjang (Bebas ribuan pcs)
   const handleDirectQtyChange = (productId, value) => {
     const val = parseInt(value, 10);
     const product = products.find((p) => p.id === productId);
@@ -76,7 +74,7 @@ export default function KasirPage() {
     setCart((prev) =>
       prev.map((item) => {
         if (item.id === productId) {
-          if (isNaN(val) || val <= 0) return { ...item, qty: 1 }; // Minimal 1 jika kosong/invalid
+          if (isNaN(val) || val <= 0) return { ...item, qty: 1 };
           if (!isPreOrder && product && val > product.stock) {
             alert(
               `Stok harian tidak mencukupi! Maksimal stok: ${product.stock}`,
@@ -95,8 +93,8 @@ export default function KasirPage() {
     0,
   );
 
-  // 2. Logika Checkout
-  const handleCheckout = async () => {
+  // 1. Trigger saat tombol proses diklik (Validasi awal sebelum pilih pembayaran)
+  const handleProceedClick = () => {
     if (cart.length === 0) return;
 
     if (isPreOrder && (!customerName || !pickupDate)) {
@@ -104,6 +102,13 @@ export default function KasirPage() {
       return;
     }
 
+    // Munculkan popup pilihan pembayaran Cash / QRIS
+    setShowPaymentModal(true);
+  };
+
+  // 2. Eksekusi Checkout setelah metode pembayaran dipilih ('Cash' atau 'QRIS')
+  const handleCheckout = async (paymentMethod) => {
+    setShowPaymentModal(false);
     setIsProcessing(true);
 
     try {
@@ -112,7 +117,13 @@ export default function KasirPage() {
 
       const { data: trxData, error: trxError } = await supabase
         .from("transaksi")
-        .insert([{ kode_trx: kodeTrx, total_omset: totalBelanja }])
+        .insert([
+          {
+            kode_trx: kodeTrx,
+            total_omset: totalBelanja,
+            metode_pembayaran: paymentMethod,
+          },
+        ])
         .select("id")
         .single();
 
@@ -156,6 +167,7 @@ export default function KasirPage() {
         pemesan: customerName || "-",
         telepon: customerPhone || "-",
         tglAmbil: pickupDate || "-",
+        metodeBayar: paymentMethod,
       });
 
       setCart([]);
@@ -184,7 +196,8 @@ export default function KasirPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] dark:bg-zinc-900 flex flex-col font-sans">
+    // PERBAIKAN: Gunakan h-screen dan overflow-hidden agar aplikasi tidak bisa di-scroll ke bawah secara global
+    <div className="h-screen overflow-hidden bg-[#FDFBF7] dark:bg-zinc-900 flex flex-col font-sans">
       <Head>
         <title>POS Kasir - Toko Roti Amira</title>
         <style>{`
@@ -194,11 +207,16 @@ export default function KasirPage() {
             #printable-receipt { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; color: black !important; }
             .no-print { display: none !important; }
           }
+          /* Custom Scrollbar agar lebih rapi */
+          ::-webkit-scrollbar { width: 6px; }
+          ::-webkit-scrollbar-track { background: transparent; }
+          ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+          .dark ::-webkit-scrollbar-thumb { background: #3f3f46; }
         `}</style>
       </Head>
 
-      {/* Header Kasir */}
-      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-10">
+      {/* Header Kasir - PERBAIKAN: Gunakan shrink-0 agar header tidak mengecil */}
+      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center z-10 shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-2xl">🥐</span>
           <h1 className="text-lg md:text-xl font-bold text-amber-900 dark:text-amber-400">
@@ -230,12 +248,12 @@ export default function KasirPage() {
         </div>
       </nav>
 
-      {/* Area Utama */}
-      <div className="flex flex-1 overflow-hidden h-[calc(100vh-65px)]">
-        {/* Kiri: Daftar Produk & Bar Pencarian */}
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 flex flex-col gap-4">
-          {/* Bar Pencarian Produk Cepat */}
-          <div className="bg-white dark:bg-zinc-800 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-700 flex items-center gap-3">
+      {/* Area Utama - PERBAIKAN: flex-1 dan overflow-hidden */}
+      <div className="flex flex-1 overflow-hidden bg-gray-50 dark:bg-zinc-900/50">
+        {/* Kiri: Daftar Produk (Scroll mandiri) */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 relative">
+          {/* Kolom Pencarian Sticky dengan Efek Kaca (Glassmorphism) & Bayangan Luar Pekat */}
+          <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md p-3 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.2)] dark:shadow-[0_0_30px_rgba(0,0,0,0.9)] border border-gray-200/50 dark:border-zinc-700/50 flex items-center gap-3 shrink-0 sticky top-0 z-20">
             <span className="text-gray-400 pl-2">🔍</span>
             <input
               type="text"
@@ -254,42 +272,46 @@ export default function KasirPage() {
             )}
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-6">
             {filteredProducts.map((p) => (
               <button
                 key={p.id}
                 onClick={() => addToCart(p)}
                 disabled={!isPreOrder && p.stock <= 0}
-                className={`bg-white dark:bg-zinc-800 p-4 rounded-2xl shadow-sm border ${!isPreOrder && p.stock <= 0 ? "border-red-200 opacity-60 cursor-not-allowed" : "border-gray-100 hover:border-amber-400 dark:border-zinc-700 dark:hover:border-amber-500"} transition-all text-left group relative overflow-hidden`}
+                className={`bg-white dark:bg-zinc-800 p-4 rounded-2xl shadow-sm border ${!isPreOrder && p.stock <= 0 ? "border-red-200 opacity-60 cursor-not-allowed" : "border-gray-100 hover:border-amber-400 dark:border-zinc-700 dark:hover:border-amber-500"} transition-all text-left group relative overflow-hidden flex flex-col`}
               >
-                <div className="aspect-square bg-amber-50 dark:bg-zinc-700 rounded-xl mb-3 flex items-center justify-center text-4xl group-hover:scale-105 transition-transform">
+                <div className="aspect-square bg-amber-50 dark:bg-zinc-700 w-full rounded-xl mb-3 flex items-center justify-center text-4xl group-hover:scale-105 transition-transform">
                   🍞
                 </div>
-                <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm md:text-base line-clamp-2">
-                  {p.name}
-                </h3>
-                <p className="text-amber-600 dark:text-amber-500 font-bold mt-1">
-                  Rp {p.price.toLocaleString("id-ID")}
-                </p>
-                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 font-medium flex justify-between">
-                  <span>Stok: {p.stock}</span>
-                  {!isPreOrder && p.stock <= 0 && (
-                    <span className="text-red-500 font-bold">Habis</span>
-                  )}
+                <div className="flex-1 flex flex-col justify-between w-full">
+                  <h3 className="font-bold text-gray-800 dark:text-gray-100 text-sm md:text-base line-clamp-2">
+                    {p.name}
+                  </h3>
+                  <div className="mt-2">
+                    <p className="text-amber-600 dark:text-amber-500 font-bold">
+                      Rp {p.price.toLocaleString("id-ID")}
+                    </p>
+                    <div className="mt-1 text-xs text-gray-500 dark:text-gray-400 font-medium flex justify-between">
+                      <span>Stok: {p.stock}</span>
+                      {!isPreOrder && p.stock <= 0 && (
+                        <span className="text-red-500 font-bold">Habis</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </button>
             ))}
           </div>
         </main>
 
-        {/* Kanan: Sidebar Keranjang & Pre-Order */}
-        <aside className="w-80 lg:w-96 bg-white dark:bg-zinc-800 border-l border-gray-200 dark:border-zinc-700 flex flex-col shadow-xl z-20">
-          <div className="p-4 border-b border-gray-200 dark:border-zinc-700 space-y-3">
+        {/* Kanan: Sidebar Keranjang - PERBAIKAN: Layout ditahan agar tidak terdorong konten */}
+        <aside className="w-80 lg:w-96 bg-white dark:bg-zinc-800 border-l border-gray-200 dark:border-zinc-700 flex flex-col shadow-xl z-20 shrink-0">
+          {/* Header Sidebar (Statis) */}
+          <div className="p-4 border-b border-gray-200 dark:border-zinc-700 space-y-3 shrink-0">
             <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
               Pesanan Saat Ini
             </h2>
 
-            {/* Toggle Pre-Order */}
             <div className="bg-amber-50 dark:bg-zinc-900/50 p-3 rounded-xl border border-amber-200 dark:border-zinc-700">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
@@ -299,7 +321,7 @@ export default function KasirPage() {
                   className="w-4 h-4 text-amber-600 rounded focus:ring-amber-500"
                 />
                 <span className="text-xs font-bold text-amber-900 dark:text-amber-400">
-                  Mode Pesanan Khusus (Pre-Order)
+                  Mode Pesanan Khusus (PO)
                 </span>
               </label>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
@@ -307,7 +329,6 @@ export default function KasirPage() {
               </p>
             </div>
 
-            {/* Form Input Detail Pemesan */}
             {isPreOrder && (
               <div className="space-y-2 pt-1 animate-fadeIn">
                 <input
@@ -339,6 +360,7 @@ export default function KasirPage() {
             )}
           </div>
 
+          {/* Isi Keranjang (Scroll mandiri) */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {cart.length === 0 ? (
               <div className="h-full flex items-center justify-center text-gray-400 text-sm">
@@ -359,8 +381,7 @@ export default function KasirPage() {
                     </p>
                   </div>
 
-                  {/* Input Qty Langsung Ketik atau Pakai Tombol +/- */}
-                  <div className="flex items-center gap-1 bg-gray-50 dark:bg-zinc-700 rounded-lg p-1">
+                  <div className="flex items-center gap-1 bg-gray-50 dark:bg-zinc-700 rounded-lg p-1 shrink-0">
                     <button
                       onClick={() => updateQty(item.id, -1)}
                       className="w-6 h-6 flex items-center justify-center bg-white dark:bg-zinc-600 rounded text-gray-600 dark:text-gray-200 shadow-sm"
@@ -375,7 +396,7 @@ export default function KasirPage() {
                       onChange={(e) =>
                         handleDirectQtyChange(item.id, e.target.value)
                       }
-                      className="w-12 text-center text-xs font-bold bg-transparent outline-none text-gray-800 dark:text-white"
+                      className="w-10 text-center text-xs font-bold bg-transparent outline-none text-gray-800 dark:text-white"
                     />
 
                     <button
@@ -389,7 +410,7 @@ export default function KasirPage() {
 
                   <button
                     onClick={() => removeFromCart(item.id)}
-                    className="p-1 text-red-500 hover:bg-red-50 rounded dark:hover:bg-red-900/20"
+                    className="p-1 text-red-500 hover:bg-red-50 rounded dark:hover:bg-red-900/20 shrink-0"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -411,7 +432,8 @@ export default function KasirPage() {
             )}
           </div>
 
-          <div className="p-4 bg-gray-50 dark:bg-zinc-800/80 border-t border-gray-200 dark:border-zinc-700">
+          {/* Footer Pembayaran (Statis di Bawah) */}
+          <div className="p-4 bg-gray-50 dark:bg-zinc-800/80 border-t border-gray-200 dark:border-zinc-700 shrink-0">
             <div className="flex justify-between items-center mb-4">
               <span className="text-gray-600 dark:text-gray-400 font-medium">
                 Total:
@@ -421,7 +443,7 @@ export default function KasirPage() {
               </span>
             </div>
             <button
-              onClick={handleCheckout}
+              onClick={handleProceedClick}
               disabled={cart.length === 0 || isProcessing}
               className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-lg flex justify-center items-center gap-2"
             >
@@ -434,6 +456,48 @@ export default function KasirPage() {
           </div>
         </aside>
       </div>
+
+      {/* Modal Popup Pilih Metode Pembayaran (Cash / QRIS) */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-zinc-800 w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center space-y-4 border border-gray-100 dark:border-zinc-700 animate-fadeIn">
+            <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+              Pilih Metode Pembayaran
+            </h3>
+            <p className="text-xs text-gray-500">
+              Total Tagihan:{" "}
+              <span className="font-bold text-amber-600">
+                Rp {totalBelanja.toLocaleString("id-ID")}
+              </span>
+            </p>
+
+            <div className="grid grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={() => handleCheckout("Cash")}
+                className="p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 hover:bg-emerald-100 text-emerald-800 dark:text-emerald-300 font-bold flex flex-col items-center gap-2 transition-all shadow-sm"
+              >
+                <span className="text-3xl">💵</span>
+                <span>TUNAI (CASH)</span>
+              </button>
+
+              <button
+                onClick={() => handleCheckout("QRIS")}
+                className="p-4 rounded-xl border-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 text-blue-800 dark:text-blue-300 font-bold flex flex-col items-center gap-2 transition-all shadow-sm"
+              >
+                <span className="text-3xl">📱</span>
+                <span>QRIS</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => setShowPaymentModal(false)}
+              className="w-full mt-2 py-2 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 font-semibold"
+            >
+              Batal
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal Struk */}
       {receiptData && (
@@ -476,6 +540,12 @@ export default function KasirPage() {
                 <span>{receiptData.waktu}</span>
                 <span>{receiptData.kode}</span>
               </div>
+              <div className="text-xs font-semibold text-gray-700 mt-1 text-left">
+                Pembayaran:{" "}
+                <span className="text-amber-600 uppercase">
+                  {receiptData.metodeBayar}
+                </span>
+              </div>
               {receiptData.isPO && (
                 <div className="text-left text-xs bg-gray-50 p-2 rounded mt-2 space-y-1">
                   <p>
@@ -491,7 +561,7 @@ export default function KasirPage() {
               )}
             </div>
 
-            <div className="space-y-3 mb-4 text-sm text-black">
+            <div className="space-y-3 mb-4 text-sm text-black max-h-60 overflow-y-auto">
               {receiptData.items.map((item, index) => (
                 <div key={index} className="flex justify-between items-start">
                   <div className="flex-1">

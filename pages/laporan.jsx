@@ -24,9 +24,10 @@ export default function LaporanDetail() {
     const fetchLedger = async () => {
       setIsLoading(true);
       try {
+        // Mengambil data relasi dari Supabase
         const { data, error } = await supabase.from("detail_transaksi").select(`
             id, qty, harga_jual_saat_ini, hpp_bahan_saat_ini, hpp_kemasan_saat_ini,
-            transaksi ( kode_trx, created_at ),
+            transaksi ( kode_trx, created_at, metode_pembayaran ),
             produk ( nama )
           `);
 
@@ -46,6 +47,7 @@ export default function LaporanDetail() {
               id: item.id,
               kode_trx: item.transaksi?.kode_trx || "-",
               tanggal: new Date(item.transaksi?.created_at || 0),
+              metode_pembayaran: item.transaksi?.metode_pembayaran || "Cash",
               nama_produk: item.produk?.nama || "Produk Dihapus",
               qty: item.qty,
               harga_jual: item.harga_jual_saat_ini,
@@ -130,19 +132,19 @@ export default function LaporanDetail() {
     currentPage * limit,
   );
 
-  // Ekspor mengekspor data yang sudah difilter (bukan hanya halaman saat ini)
+  // Ekspor CSV
   const exportToCSV = () => {
     if (sortedData.length === 0) return alert("Tidak ada data untuk diekspor!");
 
     let csvContent = "data:text/csv;charset=utf-8,";
     csvContent +=
-      "No TRX,Tanggal,Produk,Qty,Omset,HPP Total,Laba Kotor,Overhead,Laba Bersih\n";
+      "No TRX,Tanggal,Metode Pembayaran,Produk,Qty,Omset,HPP Total,Laba Kotor,Overhead,Laba Bersih\n";
 
     sortedData.forEach((row) => {
       const tanggalFormat = row.tanggal
         .toLocaleString("id-ID")
         .replace(/,/g, "");
-      const baris = `${row.kode_trx},${tanggalFormat},${row.nama_produk},${row.qty},${row.omset},${row.hppTotal},${row.labaKotor},${row.overhead},${row.labaBersih}`;
+      const baris = `${row.kode_trx},${tanggalFormat},${row.metode_pembayaran},${row.nama_produk},${row.qty},${row.omset},${row.hppTotal},${row.labaKotor},${row.overhead},${row.labaBersih}`;
       csvContent += baris + "\n";
     });
 
@@ -167,9 +169,10 @@ export default function LaporanDetail() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBF7] dark:bg-zinc-900 transition-colors duration-300 pb-10">
-      {/* Header */}
-      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center sticky top-0 z-10 gap-2">
+    // PERBAIKAN: Gunakan h-screen, flex-col, dan overflow-hidden
+    <div className="h-screen flex flex-col overflow-hidden bg-[#FDFBF7] dark:bg-zinc-900 transition-colors duration-300">
+      {/* Header Statis: Tambahkan shrink-0, shadow-md, dan z-20 */}
+      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 py-3 flex justify-between items-center shrink-0 shadow-md dark:shadow-black/40 z-20 gap-2">
         <h1 className="ml-12 lg:ml-0 text-lg md:text-2xl font-bold text-amber-900 dark:text-amber-400 truncate">
           Toko Roti Amira
           <span className="hidden sm:inline text-sm font-normal text-gray-500 dark:text-gray-400 ml-2">
@@ -200,242 +203,259 @@ export default function LaporanDetail() {
         </div>
       </nav>
 
-      {/* Konten Utama */}
-      <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 pt-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
-            Buku Besar Transaksi
-          </h2>
-          <button
-            onClick={exportToCSV}
-            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors shadow-md text-sm whitespace-nowrap"
-          >
-            📥 Ekspor {sortedData.length} Data
-          </button>
-        </div>
+      {/* PERBAIKAN: Kontainer scroll mandiri untuk area konten laporan */}
+      <div className="flex-1 overflow-y-auto w-full custom-scrollbar">
+        <main className="p-4 md:p-6 max-w-7xl mx-auto space-y-6 pt-6 pb-20">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-100">
+              Buku Besar Transaksi
+            </h2>
+            <button
+              onClick={exportToCSV}
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg transition-colors shadow-md text-sm whitespace-nowrap"
+            >
+              📥 Ekspor {sortedData.length} Data
+            </button>
+          </div>
 
-        {/* Panel Filter Kontrol */}
-        <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-700 flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Cari Data
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                🔍
-              </span>
+          {/* Panel Filter Kontrol */}
+          <div className="bg-white dark:bg-zinc-800 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-700 flex flex-wrap gap-4 items-end">
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Cari Data
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  placeholder="ID Transaksi atau Produk..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Dari Tanggal
+              </label>
               <input
-                type="text"
-                placeholder="ID Transaksi atau Produk..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
               />
             </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Sampai Tanggal
+              </label>
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Tampilkan
+              </label>
+              <select
+                value={rowsPerPage}
+                onChange={(e) => setRowsPerPage(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
+              >
+                <option value={10}>10 Baris</option>
+                <option value={100}>100 Baris</option>
+                <option value={1000}>1000 Baris</option>
+                <option value="all">Semua Data</option>
+              </select>
+            </div>
+
+            {(startDate || endDate || searchTerm) && (
+              <button
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setSearchTerm("");
+                }}
+                className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+              >
+                Reset Filter
+              </button>
+            )}
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Dari Tanggal
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Sampai Tanggal
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-              Tampilkan
-            </label>
-            <select
-              value={rowsPerPage}
-              onChange={(e) => setRowsPerPage(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-900 text-sm focus:ring-2 focus:ring-amber-500 outline-none text-gray-800 dark:text-gray-200"
-            >
-              <option value={10}>10 Baris</option>
-              <option value={100}>100 Baris</option>
-              <option value={1000}>1000 Baris</option>
-              <option value="all">Semua Data</option>
-            </select>
-          </div>
-
-          {(startDate || endDate || searchTerm) && (
-            <button
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-                setSearchTerm("");
-              }}
-              className="px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-            >
-              Reset Filter
-            </button>
-          )}
-        </div>
-
-        {/* Tabel Data */}
-        <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 overflow-hidden flex flex-col">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[1000px] select-none">
-              <thead>
-                <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-700 text-gray-500 dark:text-gray-400 text-sm">
-                  <th
-                    onClick={() => handleSort("tanggal")}
-                    className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    No. TRX & Waktu {renderSortIcon("tanggal")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("nama_produk")}
-                    className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Produk & Qty {renderSortIcon("nama_produk")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("omset")}
-                    className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Omset Kotor {renderSortIcon("omset")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("hppTotal")}
-                    className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Detail HPP {renderSortIcon("hppTotal")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("labaKotor")}
-                    className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Laba Kotor {renderSortIcon("labaKotor")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("overhead")}
-                    className="p-4 font-medium text-amber-600 dark:text-amber-500 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Overhead (20%) {renderSortIcon("overhead")}
-                  </th>
-                  <th
-                    onClick={() => handleSort("labaBersih")}
-                    className="p-4 font-medium text-emerald-600 dark:text-emerald-500 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
-                  >
-                    Laba Bersih {renderSortIcon("labaBersih")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
-                {paginatedData.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="p-8 text-center text-gray-500">
-                      Data tidak ditemukan.
-                    </td>
-                  </tr>
-                ) : (
-                  paginatedData.map((trx) => (
-                    <tr
-                      key={trx.id}
-                      className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+          {/* Tabel Data */}
+          <div className="bg-white dark:bg-zinc-800 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-700 overflow-hidden flex flex-col">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse min-w-[1000px] select-none">
+                <thead>
+                  <tr className="bg-gray-50 dark:bg-zinc-900/50 border-b border-gray-100 dark:border-zinc-700 text-gray-500 dark:text-gray-400 text-sm">
+                    <th
+                      onClick={() => handleSort("tanggal")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
                     >
-                      <td className="p-4">
-                        <p className="font-bold text-gray-800 dark:text-gray-100">
-                          {trx.kode_trx}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {trx.tanggal.toLocaleString("id-ID", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </td>
-                      <td className="p-4">
-                        <p className="font-semibold text-gray-800 dark:text-gray-100">
-                          {trx.nama_produk}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {trx.qty} pcs x Rp{" "}
-                          {trx.harga_jual.toLocaleString("id-ID")}
-                        </p>
-                      </td>
-                      <td className="p-4 font-bold text-gray-800 dark:text-gray-100">
-                        Rp {trx.omset.toLocaleString("id-ID")}
-                      </td>
-                      <td className="p-4">
-                        <p className="text-sm font-semibold text-red-600 dark:text-red-400">
-                          Rp {trx.hppTotal.toLocaleString("id-ID")}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Bhn:{" "}
-                          {(trx.hpp_bahan * trx.qty).toLocaleString("id-ID")} |
-                          Kms:{" "}
-                          {(trx.hpp_kemasan * trx.qty).toLocaleString("id-ID")}
-                        </p>
-                      </td>
-                      <td className="p-4 font-semibold text-gray-700 dark:text-gray-300">
-                        Rp {trx.labaKotor.toLocaleString("id-ID")}
-                      </td>
-                      <td className="p-4 font-semibold text-amber-600 dark:text-amber-500">
-                        - Rp {trx.overhead.toLocaleString("id-ID")}
-                      </td>
-                      <td className="p-4 font-bold text-emerald-600 dark:text-emerald-400">
-                        Rp {trx.labaBersih.toLocaleString("id-ID")}
+                      No. TRX & Waktu {renderSortIcon("tanggal")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("metode_pembayaran")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Pembayaran {renderSortIcon("metode_pembayaran")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("nama_produk")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Produk & Qty {renderSortIcon("nama_produk")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("omset")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Omset Kotor {renderSortIcon("omset")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("hppTotal")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Detail HPP {renderSortIcon("hppTotal")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("labaKotor")}
+                      className="p-4 font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Laba Kotor {renderSortIcon("labaKotor")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("overhead")}
+                      className="p-4 font-medium text-amber-600 dark:text-amber-500 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Overhead (20%) {renderSortIcon("overhead")}
+                    </th>
+                    <th
+                      onClick={() => handleSort("labaBersih")}
+                      className="p-4 font-medium text-emerald-600 dark:text-emerald-500 cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      Laba Bersih {renderSortIcon("labaBersih")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 dark:divide-zinc-700">
+                  {paginatedData.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="p-8 text-center text-gray-500">
+                        Data tidak ditemukan.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                  ) : (
+                    paginatedData.map((trx) => (
+                      <tr
+                        key={trx.id}
+                        className="hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors"
+                      >
+                        <td className="p-4">
+                          <p className="font-bold text-gray-800 dark:text-gray-100">
+                            {trx.kode_trx}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {trx.tanggal.toLocaleString("id-ID", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </td>
+                        <td className="p-4">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-xs font-bold ${trx.metode_pembayaran === "QRIS" ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"}`}
+                          >
+                            {trx.metode_pembayaran}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <p className="font-semibold text-gray-800 dark:text-gray-100">
+                            {trx.nama_produk}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {trx.qty} pcs x Rp{" "}
+                            {trx.harga_jual.toLocaleString("id-ID")}
+                          </p>
+                        </td>
+                        <td className="p-4 font-bold text-gray-800 dark:text-gray-100">
+                          Rp {trx.omset.toLocaleString("id-ID")}
+                        </td>
+                        <td className="p-4">
+                          <p className="text-sm font-semibold text-red-600 dark:text-red-400">
+                            Rp {trx.hppTotal.toLocaleString("id-ID")}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Bhn:{" "}
+                            {(trx.hpp_bahan * trx.qty).toLocaleString("id-ID")}{" "}
+                            | Kms:{" "}
+                            {(trx.hpp_kemasan * trx.qty).toLocaleString(
+                              "id-ID",
+                            )}
+                          </p>
+                        </td>
+                        <td className="p-4 font-semibold text-gray-700 dark:text-gray-300">
+                          Rp {trx.labaKotor.toLocaleString("id-ID")}
+                        </td>
+                        <td className="p-4 font-semibold text-amber-600 dark:text-amber-500">
+                          - Rp {trx.overhead.toLocaleString("id-ID")}
+                        </td>
+                        <td className="p-4 font-bold text-emerald-600 dark:text-emerald-400">
+                          Rp {trx.labaBersih.toLocaleString("id-ID")}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-          {/* Navigasi Pagination */}
-          <div className="p-4 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center bg-gray-50 dark:bg-zinc-800">
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Menampilkan{" "}
-              {paginatedData.length > 0 ? (currentPage - 1) * limit + 1 : 0} -{" "}
-              {Math.min(currentPage * limit, sortedData.length)} dari{" "}
-              {sortedData.length} data
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-zinc-600 transition-colors"
-              >
-                Prev
-              </button>
-              <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
-                Hal {currentPage} / {totalPages}
+            {/* Navigasi Pagination */}
+            <div className="p-4 border-t border-gray-100 dark:border-zinc-700 flex justify-between items-center bg-gray-50 dark:bg-zinc-800">
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                Menampilkan{" "}
+                {paginatedData.length > 0 ? (currentPage - 1) * limit + 1 : 0} -{" "}
+                {Math.min(currentPage * limit, sortedData.length)} dari{" "}
+                {sortedData.length} data
               </span>
-              <button
-                onClick={() =>
-                  setCurrentPage((p) => Math.min(totalPages, p + 1))
-                }
-                disabled={currentPage === totalPages || totalPages === 0}
-                className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-zinc-600 transition-colors"
-              >
-                Next
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  Prev
+                </button>
+                <span className="px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Hal {currentPage} / {totalPages}
+                </span>
+                <button
+                  onClick={() =>
+                    setCurrentPage((p) => Math.min(totalPages, p + 1))
+                  }
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-600 bg-white dark:bg-zinc-700 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  Next
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
