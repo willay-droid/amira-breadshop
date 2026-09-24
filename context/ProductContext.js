@@ -20,15 +20,22 @@ export function ProductProvider({ children }) {
         console.error("Gagal mengambil data produk:", error);
       } else if (data) {
         // Mapping nama kolom database (nama, harga_jual) agar cocok dengan variabel UI lama (name, price)
+        // Di dalam fungsi fetchProducts, cari bagian yang nge-map data dari Supabase:
         const formattedData = data.map((item) => ({
           id: item.id,
           name: item.nama,
           price: item.harga_jual,
           stock: item.stok,
-          image: item.image_url || "",
           modalBahan: item.modal_bahan,
           biayaKemasan: item.biaya_kemasan,
+          foto: item.foto,
+
+          // 👇 TAMBAHKAN 3 BARIS INI BRO 👇
+          kategori_id: item.kategori_id,
+          jenis: item.jenis,
+          hargaAwal: item.harga_awal,
         }));
+
         setProducts(formattedData);
       }
     } catch (err) {
