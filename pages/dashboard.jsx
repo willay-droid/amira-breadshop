@@ -213,31 +213,33 @@ export default function DashboardPage() {
         <title>Dashboard - Toko Roti Amira</title>
       </Head>
 
-      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-4 md:px-6 h-[68px] flex justify-between items-center z-20 shrink-0 shadow-sm">
+      <nav className="bg-white dark:bg-zinc-800 border-b border-gray-200 dark:border-zinc-700 px-3 md:px-6 h-[68px] flex justify-between items-center z-20 shrink-0 shadow-sm gap-2">
         <div>
-          <h1 className="text-lg md:text-2xl font-bold text-amber-900 dark:text-amber-400">
-            Toko Roti Amira{" "}
-            <span className="hidden sm:inline text-sm font-normal text-gray-500 dark:text-gray-400">
+          <h1 className="text-sm sm:text-lg md:text-2xl font-bold text-amber-900 dark:text-amber-400 truncate">
+            {/* Sembunyikan teks utama di layar HP kecil, tampilkan kembali dari ukuran sm ke atas */}
+            <span className="hidden sm:inline">Toko Roti Amira </span>
+            <span className="text-xs sm:text-sm font-normal text-gray-500 dark:text-gray-400">
               | Laporan Keuangan
             </span>
           </h1>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 shrink-0">
           <select
             value={timeFilter}
             onChange={(e) => setTimeFilter(e.target.value)}
-            className="px-3 py-1.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm cursor-pointer"
+            className="px-2 sm:px-3 py-1.5 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg text-xs sm:text-sm font-bold text-gray-700 dark:text-gray-200 outline-none focus:ring-2 focus:ring-amber-500 shadow-sm cursor-pointer"
           >
             <option value="hari">📅 Hari Ini</option>
             <option value="bulan">🗓️ Bulan Ini</option>
             <option value="tahun">📆 Tahun Ini</option>
-            <option value="semua">📈 Semua Waktu</option>
+            <option value="semua">📈 Semua</option>
           </select>
-          <div className="h-6 w-px bg-gray-300 dark:bg-zinc-600 mx-1"></div>
+          <div className="h-5 w-px bg-gray-300 dark:bg-zinc-600 mx-0.5"></div>
           <ThemeToggle />
           <button
             onClick={logout}
-            className="p-2 w-10 h-10 flex items-center justify-center text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-all shadow-sm"
+            className="p-2 w-9 h-9 flex items-center justify-center text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 rounded-lg transition-all shadow-sm"
+            title="Keluar"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -245,7 +247,7 @@ export default function DashboardPage() {
               viewBox="0 0 24 24"
               strokeWidth={2.5}
               stroke="currentColor"
-              className="w-6 h-6"
+              className="w-5 h-5"
             >
               <path
                 strokeLinecap="round"
@@ -268,7 +270,7 @@ export default function DashboardPage() {
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* GRAFIK BAR DINAMIS */}
               <div className="lg:col-span-2 bg-white dark:bg-zinc-800 p-6 rounded-2xl border border-gray-100 dark:border-zinc-700 shadow-sm flex flex-col">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
                   <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">
                     Grafik Tren Omset ({filterText})
                   </h3>
@@ -277,40 +279,42 @@ export default function DashboardPage() {
                   </span>
                 </div>
 
-                <div className="h-48 flex items-end justify-between gap-1 sm:gap-2 relative px-2 flex-1 mt-auto">
-                  <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6">
-                    <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
-                    <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
-                    <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
-                  </div>
+                {/* Bungkus dengan overflow-x auto agar aman di layar HP jika harinya banyak */}
+                <div className="w-full overflow-x-auto custom-scrollbar pb-2">
+                  <div
+                    className={`h-48 flex items-end justify-between gap-1 sm:gap-2 relative px-2 ${timeFilter === "bulan" ? "min-w-[600px]" : "min-w-full"}`}
+                  >
+                    <div className="absolute inset-0 flex flex-col justify-between pointer-events-none pb-6 px-2">
+                      <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
+                      <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
+                      <div className="border-t border-dashed border-gray-200 dark:border-zinc-700 w-full h-0"></div>
+                    </div>
 
-                  {chartLabels.map((label, i) => {
-                    const omset = chartDataValues[i];
-                    // Minimal tinggi 2% jika ada data, agar bar tetap terlihat walau kecil
-                    const heightPercent =
-                      omset > 0
-                        ? Math.max((omset / maxChartValue) * 100, 2)
-                        : 0;
-                    return (
-                      <div
-                        key={i}
-                        className="flex flex-col items-center flex-1 z-10 group relative h-full justify-end"
-                      >
-                        <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-20 shadow-lg">
-                          Rp {omset.toLocaleString("id-ID")}
-                        </div>
+                    {chartLabels.map((label, i) => {
+                      const omset = chartDataValues[i];
+                      const heightPercent =
+                        omset > 0
+                          ? Math.max((omset / maxChartValue) * 100, 2)
+                          : 0;
+                      return (
                         <div
-                          className={`w-full max-w-[32px] ${timeFilter === "hari" ? "max-w-[80px]" : ""} bg-amber-400 hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400 rounded-t-sm transition-all duration-500 ease-out`}
-                          style={{ height: `${heightPercent}%` }}
-                        ></div>
-                        <span
-                          className={`text-[9px] sm:text-[10px] font-semibold text-gray-500 mt-2 truncate ${timeFilter === "bulan" ? "w-full text-center" : ""}`}
+                          key={i}
+                          className="flex flex-col items-center flex-1 z-10 group relative h-full justify-end"
                         >
-                          {label}
-                        </span>
-                      </div>
-                    );
-                  })}
+                          <div className="absolute bottom-full mb-2 hidden group-hover:block bg-gray-900 text-white text-[10px] py-1 px-2 rounded whitespace-nowrap z-20 shadow-lg">
+                            Rp {omset.toLocaleString("id-ID")}
+                          </div>
+                          <div
+                            className={`w-full max-w-[28px] bg-amber-400 hover:bg-amber-500 dark:bg-amber-500 dark:hover:bg-amber-400 rounded-t-sm transition-all duration-500 ease-out`}
+                            style={{ height: `${heightPercent}%` }}
+                          ></div>
+                          <span className="text-[9px] font-semibold text-gray-500 mt-2 text-center whitespace-nowrap">
+                            {label}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
 

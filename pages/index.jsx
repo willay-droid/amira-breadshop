@@ -403,7 +403,7 @@ export default function KasirPage() {
           </div>
         </nav>
 
-        <div className="flex flex-1 overflow-hidden bg-gray-50 dark:bg-zinc-900/50">
+        <div className="flex flex-col lg:flex-row flex-1 overflow-hidden bg-gray-50 dark:bg-zinc-900/50">
           <main className="flex-1 overflow-y-auto p-4 md:p-6 flex flex-col gap-4 relative custom-scrollbar">
             <div className="bg-white/80 dark:bg-zinc-800/80 backdrop-blur-md p-3 rounded-xl shadow-[0_0_20px_rgba(0,0,0,0.1)] dark:shadow-[0_0_30px_rgba(0,0,0,0.6)] border border-gray-200/50 dark:border-zinc-700/50 flex items-center gap-3 shrink-0 sticky top-0 z-20">
               <span className="text-gray-400 pl-2">🔍</span>
@@ -482,7 +482,7 @@ export default function KasirPage() {
           </main>
 
           {/* KERANJANG KANAN */}
-          <aside className="w-80 lg:w-96 bg-white dark:bg-zinc-800 border-l border-gray-200 dark:border-zinc-700 flex flex-col shadow-xl z-20 shrink-0">
+          <aside className="w-full lg:w-96 bg-white dark:bg-zinc-800 border-t lg:border-t-0 lg:border-l border-gray-200 dark:border-zinc-700 flex flex-col shadow-xl z-20 shrink-0 max-h-[50vh] lg:max-h-none">
             <div className="p-4 border-b border-gray-200 dark:border-zinc-700 space-y-3 shrink-0">
               <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">
                 Detail Pesanan
