@@ -36,9 +36,9 @@ export async function middleware(req: NextRequest) {
               <title>Maintenance - Toko Roti Amira</title>
             </head>
             <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center; background-color:#f9fafb; margin:0; overflow:hidden;">
-              <div style="padding: 1.5rem; max-width: 90%;">
-                <h1 style="font-size:1.5rem; color:#1f2937; margin-bottom: 0.5rem;">🚧 Sedang Maintenance 🚧</h1>
-                <p style="color:#4b5563; font-size:0.9rem; line-height:1.5;">Toko Roti Amira sedang dalam perbaikan sistem. Silakan kembali beberapa saat lagi.</p>
+              <div style="padding: 1rem; max-width: 85%;">
+                <h1 style="font-size:1.2rem; color:#1f2937; margin-bottom: 0.5rem; white-space:nowrap;">🚧 Sedang Maintenance 🚧</h1>
+                <p style="color:#4b5563; font-size:0.85rem; line-height:1.6;">Toko Roti Amira sedang dalam perbaikan sistem.<br>Silakan kembali beberapa saat lagi.</p>
               </div>
             </body>
           </html>
