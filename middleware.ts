@@ -35,8 +35,8 @@ export async function middleware(req: NextRequest) {
               <meta name="viewport" content="width=device-width, initial-scale=1">
               <title>Maintenance - Toko Roti Amira</title>
             </head>
-            <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center; background-color:#f9fafb; margin:0; padding:1rem;">
-              <div>
+            <body style="display:flex; justify-content:center; align-items:center; height:100vh; font-family:sans-serif; text-align:center; background-color:#f9fafb; margin:0; overflow:hidden;">
+              <div style="padding: 1rem;">
                 <h1 style="font-size:2rem; color:#1f2937;">🚧 Sedang Maintenance 🚧</h1>
                 <p style="color:#4b5563;">Toko Roti Amira sedang dalam perbaikan sistem. Silakan kembali beberapa saat lagi.</p>
               </div>
